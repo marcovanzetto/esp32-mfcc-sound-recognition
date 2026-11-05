@@ -4,7 +4,7 @@ Real-time recognition of a **user-defined sound** on an **ESP32**, fully on-devi
 The system learns a target sound (an alarm, a doorbell, a knock, a spoken word…) in a few seconds and then detects it
 in real time by comparing **MFCC feature matrices** with a sliding-window **Frobenius distance** and an **adaptive threshold**.
 
-> University team project, Politecnico di Milano (2025).
+> University team project, Politecnico di Milano (A.Y. 2025-26).
 
 <p align="center">
   <img src="docs/images/setup.jpg" alt="Experimental setup: ESP32 and microphone on a breadboard, sound source along a measuring axis" width="320">
@@ -15,7 +15,8 @@ in real time by comparing **MFCC feature matrices** with a sliding-window **Frob
 - Runs on a low-cost ESP32 using **~26 kB of RAM**
 - Learns a new sound on demand, with no dataset and no offline training
 - **92–100 % detection rate** at matched learning/monitoring distances (0.5–3 m)
-- Robust to moderate background noise (60 dB), with **zero false positives** in all noise and cross-alarm tests
+- Robust to moderate background noise (60 dB), with **no false positives** in the background-noise tests and against
+  three similar alarms (spoken words are harder, see [Results](#results))
 - First-detection latency typically **0.5–2.5 s**
 
 ## How it works
@@ -55,8 +56,10 @@ Wiring:
 | GND     | GND     |
 | OUT     | GPIO 15 |
 
-> GPIO 15 belongs to ADC2, which cannot be used while Wi-Fi is active. If you add Wi-Fi, move the microphone to an
-> ADC1 pin (GPIO 32–39) and update `MIC_PIN`.
+> GPIO 15 is the pin used in the measurements below, but it is not the best choice for a new build: it belongs to
+> ADC2, which cannot be used while Wi-Fi is active, and it is a strapping pin, sampled at boot (if it is low, the boot
+> messages on the serial port are silenced). For a new build, connect the microphone to an input-only ADC1 pin such as
+> GPIO 34 and update `MIC_PIN`.
 
 ## Getting started
 
@@ -67,6 +70,8 @@ Wiring:
 4. Open the Serial Monitor at **115200 baud**.
 5. Send **`L`**, play the target sound and keep it playing until `Learning complete.` appears.
 6. From then on, every occurrence of the sound prints `SOUND DETECTED`. Send `L` again to learn a new sound.
+7. Send **`C`** at any time to cancel the learning or stop the monitoring, for example if the target sound never
+   exceeds the activation level and the device keeps waiting in stage 1.
 
 With `arduino-cli`:
 

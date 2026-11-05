@@ -250,14 +250,31 @@ bool passesRmsGate(bool *newSequence) {
 // LEARNING
 // ============================================================================
 
+// Stops learning and monitoring; the device waits for a new 'L' command.
+void stopAll() {
+  learning2Active = false;
+  isMonitoringActive = false;
+  testFrameIdx = 0;
+  Serial.println("\nStopped. Send 'L' to start the learning phase.");
+}
+
 // Stage 1: records NUM_REF_FRAMES consecutive frames into the reference matrix,
-// starting from the first frame whose RMS exceeds RMS_THRESHOLD. Blocking.
+// starting from the first frame whose RMS exceeds RMS_THRESHOLD. Blocking, but it
+// can be cancelled by sending 'C' (other characters, such as line endings, are ignored).
 void runLearningPhase() {
-  Serial.println("Learning phase...");
+  Serial.println("Learning phase... (send 'C' to cancel)");
   Serial.println("Stage 1: building reference matrix (play the target sound)");
 
   int refFrameIdx = 0;
   while (refFrameIdx < NUM_REF_FRAMES) {
+    while (Serial.available()) {
+      char cmd = Serial.read();
+      if (cmd == 'C' || cmd == 'c') {
+        stopAll();
+        return;
+      }
+    }
+
     float samplingFreq;
     acquireAndProcessFrame(fftReal, samplingFreq);
 
@@ -488,7 +505,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(MIC_PIN, INPUT);
   Serial.println("=== ESP32 Sound Recognition ===");
-  Serial.println("Send 'L' to start the learning phase.");
+  Serial.println("Send 'L' to start the learning phase, 'C' to cancel or stop.");
 }
 
 void loop() {
@@ -497,6 +514,7 @@ void loop() {
   if (Serial.available()) {
     char cmd = Serial.read();
     if (cmd == 'L' || cmd == 'l') startLearning();
+    else if (cmd == 'C' || cmd == 'c') stopAll();
   }
 
   if (learning2Active) {
